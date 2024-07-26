@@ -1,0 +1,17 @@
+---
+title: "Five Parameters"
+author: "Zephan S"
+format: html
+execute: 
+  echo: false
+---
+
+```{r}
+#| label: setup
+#| message: false
+
+library(tidyverse)
+library(primer.data)
+```
+
+Using data from all deceased governor candidates in the US between 1945 and 2012, we seek to predict candidate longevity after the election.
