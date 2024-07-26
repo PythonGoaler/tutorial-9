@@ -12,6 +12,55 @@ execute:
 
 library(tidyverse)
 library(primer.data)
+library(brms)
+library(tidybayes)
+library(gtsummary)
 ```
 
-Using data from all deceased gubernatorial candidates in the US between 1945 and 2012, we seek to predict candidate longevity after the election. One problem is that life expectancy in the US has increased in that time span.
+
+
+```{r}
+#| label: model
+#| cache: true
+df1 <-
+  governors |>
+    select(last_name, year, state, sex, lived_after, election_age)
+
+fit_all <- brm(data = df1, formula = lived_after ~ sex*election_age, silent = 2, refresh = 0, seed = 13)
+
+```
+
+
+
+
+
+```{r}
+#| label: plot
+newdata <- tibble(sex = c("Male", "Female"), 
+       election_age = 50)
+ndata <- tibble(sex = c("Male", "Female"), 
+       election_age = 50)
+
+fit_all |>
+  add_epred_draws(newdata = ndata) |>
+  ggplot(aes(x = .epred, fill = sex)) + 
+  geom_histogram(aes(y = after_stat(count/sum(count))), alpha = 0.5, bins = 100, position = 'identity') + 
+  scale_x_continuous(labels = scales::number_format(accuracy = 1)) + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + 
+  labs(title = "Posterior for Expected Years Lived Post-Elections", 
+  subtitle = "Male candidates live longer", x = "Years", y = "Probability")
+
+
+```
+Using data from all deceased gubernatorial candidates in the US between 1945 and 2012, we seek to predict candidate longevity after the election. One problem is that life expectancy in the US has increased in that time span We are using a Bayesian regression model with the formula lived_after ~ sex * election_age to analyze the data. The model reveals that the relationship between sex and election age has a positive direction, suggesting that as election age increases, the life expectancy difference between male and female governors tends to widen. We find that male candidates tend to live longer after election. One of the main reasons that the estimates for the quantities of interest may be wrong is because the data isn’t nearly as diverse for females as it is for males. It would be best if we were to narrow our question to a set age of female and male candidates.
+
+Here's the formula - 
+$$ lived\_after_i =  \beta_0 + \beta_1 male_i + \beta_2 c\_election\_age_i + 
+\\ \beta_3 male_i *  c\_election\_age_i + \epsilon_i $$
+
+
+```{r}
+tbl_regression(fit_all, intercept = TRUE)
+
+```
+
